@@ -25,7 +25,7 @@ const static struct config dfl_config = {
 #define F(x) (x-1)   /* Hotkey (F1-F10) array index */
 #define U(x) (1u<<x) /* User pin (U0-U2) bitmask */
 
-#if 0
+
     /* An example configuration for switching ROMs and PAL/NTSC or DF0/DF1:
      *  F1-F4: Switch between ROMs #1-#4 via binary value at pins U1,U0. 
      *  F9:    Switch PAL (or Gotek DF0) via U2 LOW. 
@@ -37,29 +37,28 @@ const static struct config dfl_config = {
     .user_pin_pushpull  = 0,
 
     /* ROM #1, Output2 LOW */
-    .user_pin_high      = 0,
+    .user_pin_high      = U(1) | U(0),
 
     .hotkey = {
         /* F1-F4: ROM switching. */
-        [F(1)]  = { .str = "ROM #1",
+        [F(1)]  = { .str = "DiagROM",
                     .pin_mod  = U(1) | U(0), },
-        [F(2)]  = { .str = "ROM #2",
+        [F(2)]  = { .str = "Kick 3.1",
                     .pin_mod  = U(1) | U(0),
                     .pin_high =        U(0), },
-        [F(3)]  = { .str = "ROM #3",
+        [F(3)]  = { .str = "Kick 2.05",
                     .pin_mod  = U(1) | U(0),
                     .pin_high = U(1)       , },
-        [F(4)]  = { .str = "ROM #4",
+        [F(4)]  = { .str = "Kick 1.3",
                     .pin_mod  = U(1) | U(0),
                     .pin_high = U(1) | U(0), },
         /* F9-F10: PAL/NTSC, DF0/DF1. */
-        [F(9)]  = { .str = "Output2 LOW",
+        [F(9)]  = { .str = "512k chip mem",
                     .pin_mod  = U(2), },
-        [F(10)] = { .str = "Output2 HIGH",
+        [F(10)] = { .str = "512k fast mem",
                     .pin_mod  = U(2),
                     .pin_high = U(2), },
     }
-#endif
 
 #if 0
     /* An example configuration for DF0/DF1 switching, for Piotr. 
