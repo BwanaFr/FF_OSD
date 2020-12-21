@@ -16,7 +16,7 @@ const static struct config dfl_config = {
     .v_off = 50,
     .min_cols = 16,
     .max_cols = 40,
-    .dispctl_mode = DISPCTL_tristate,
+    .dispctl_mode = DISPCTL_enable_high,
     .rows = 2,
     .display_timing = DISP_15KHZ,
     .display_spi = DISP_SPI2,
@@ -37,7 +37,7 @@ const static struct config dfl_config = {
     .user_pin_pushpull  = 0,
 
     /* ROM #1, Output2 LOW */
-    .user_pin_high      = U(1) | U(0),
+    .user_pin_high      = U(0),
 
     .hotkey = {
         /* F1-F4: ROM switching. */
@@ -53,9 +53,9 @@ const static struct config dfl_config = {
                     .pin_mod  = U(1) | U(0),
                     .pin_high = U(1) | U(0), },
         /* F9-F10: PAL/NTSC, DF0/DF1. */
-        [F(9)]  = { .str = "512k chip mem",
+        [F(9)]  = { .str = "DF0: Gotek\0DF1: Floppy",
                     .pin_mod  = U(2), },
-        [F(10)] = { .str = "512k fast mem",
+        [F(10)] = { .str = "DF1: Gotek\0DF0: Floppy",
                     .pin_mod  = U(2),
                     .pin_high = U(2), },
     }
