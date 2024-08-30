@@ -1,5 +1,5 @@
 
-export FW_VER := 1.8
+export FW_VER := 1.9
 
 PROJ = FF_OSD
 VER := v$(FW_VER)
@@ -38,11 +38,11 @@ BAUD=921600
 DEV=/dev/ttyUSB0
 
 flash: all
-	sudo ~/stm32flash/stm32flash -b $(BAUD) \
+	sudo stm32flash -b $(BAUD) \
 	-vw src/$(PROJ).hex $(DEV)
 
 start:
-	sudo ~/stm32flash/stm32flash -b $(BAUD) -g 0 $(DEV)
+	sudo stm32flash -b $(BAUD) -g 0 $(DEV)
 
 serial:
 	sudo miniterm.py $(DEV) 115200
