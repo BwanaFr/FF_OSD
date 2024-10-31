@@ -1,10 +1,10 @@
 /*
  * config.c
- * 
+ *
  * Read/write/modify configuration parameters.
- * 
+ *
  * Written & released by Keir Fraser <keir.xen@gmail.com>
- * 
+ *
  * This is free and unencumbered software released into the public domain.
  * See the file COPYING for more details, or visit <http://unlicense.org>.
  */
@@ -42,6 +42,12 @@ static void config_printk(const struct config *conf)
     printk(" V.Off: %u\n", conf->v_off);
     printk(" Rows: %u\n", conf->rows);
     printk(" Columns: %u-%u\n", conf->min_cols, conf->max_cols);
+    for(int i=0;i<ARRAY_SIZE(conf->config_pins);++i){
+        const struct configurable_pins* cfgPin = &conf->config_pins[i];
+        if(cfgPin->pin_mod){
+            printk(" %s: %s\n", cfgPin->str, cfgPin->value ? cfgPin->onText : cfgPin->offText);
+        }
+    }
 }
 
 static void config_write_flash(struct config *conf)
@@ -81,7 +87,7 @@ void config_init(void)
     }
 
     /* Hotkey configuration is stored in flash-config space but not actually
-     * runtime modifiable or viewable. So, to avoid confusion, always use the 
+     * runtime modifiable or viewable. So, to avoid confusion, always use the
      * compile-time hotkey configuration. */
     memcpy(config.hotkey, dfl_config.hotkey, sizeof(config.hotkey));
 
@@ -405,4 +411,3 @@ void config_process(uint8_t b, bool_t autosync_changed)
  * indent-tabs-mode: nil
  * End:
  */
-

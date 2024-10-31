@@ -1,10 +1,10 @@
 /*
  * config.h
- * 
+ *
  * User configuration.
- * 
+ *
  * Written & released by Keir Fraser <keir.xen@gmail.com>
- * 
+ *
  * This is free and unencumbered software released into the public domain.
  * See the file COPYING for more details, or visit <http://unlicense.org>.
  */
@@ -59,7 +59,7 @@ extern struct packed config {
     struct packed config_hotkey {
         /* Mask of user pins modified by this hotkey. */
         uint8_t pin_mod;
-        /* Mask of user pins driven HIGH by this hotkey. 
+        /* Mask of user pins driven HIGH by this hotkey.
          * Pins in @pin_mod but not in @pin_high are driven LOW. */
         uint8_t pin_high;
         uint16_t flags;
@@ -67,6 +67,15 @@ extern struct packed config {
 #define HKF_momentary 1
         char str[30];
     } hotkey[10];
+
+    struct packed configurable_pins {
+        uint8_t pin_mod;
+        uint8_t pin_high;
+        bool_t value;
+        char str[16];
+        char onText[14];
+        char offText[14];
+    } config_pins[2];
 
     uint16_t crc16_ccitt;
 

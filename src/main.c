@@ -1,20 +1,20 @@
 /*
  * main.c
- * 
+ *
  * Bootstrap the STM32F103C8T6 and get things moving.
- * 
+ *
  * Written & released by Keir Fraser <keir.xen@gmail.com>
- * 
+ *
  * This is free and unencumbered software released into the public domain.
  * See the file COPYING for more details, or visit <http://unlicense.org>.
  */
 
 /*
  * PIN ASSIGNMENTS:
- * 
+ *
  * FF OSD I2C Special Protocol (use with FlashFloppy v3.4a or later):
  *  A0-A1: Jumper/Strap
- * 
+ *
  * Reset to Factory Defaults:
  *  A1-A2: Jumper/Strap
  *
@@ -24,26 +24,26 @@
  *  A2: SEL
  * [NB. Rotary Encoder is unavailable if A0-A1 is jumpered, but FF OSD
  *      can be configured via FlashFloppy]
- * 
+ *
  * Serial Console:
  *  A9: TX
  *  A10: RX
- * 
+ *
  * I2C Interface (to Gotek):
  *  B6: CLK
  *  B7: DAT
- * 
+ *
  * Display:
  *  A7: Display output SPI1
  *  A8: CSYNC or HSYNC
  *  B14: VSYNC (only needed with HSYNC)
  *  B15: Display output SPI2
  *  A15: Display enable
- * 
+ *
  * Amiga keyboard:
  *  B3: KBDAT
  *  B4: KBCLK
- * 
+ *
  * User outputs:
  *  B8:  U0
  *  B9:  U1
@@ -62,7 +62,7 @@ void IRQ_23(void) __attribute__((alias("IRQ_csync"))); /* EXTI9_5 */
 #define irq_vsync  40
 void IRQ_40(void) __attribute__((alias("IRQ_vsync"))); /* EXTI15_10 */
 
-/* TIM1 Ch.3: Triggered at horizontal end of OSD box. 
+/* TIM1 Ch.3: Triggered at horizontal end of OSD box.
  * TIM1 counter is started by TIM2 UEV (ie. when SPI DMA begins). */
 #define tim1_ch3_dma (dma1->ch6)
 #define tim1_ch3_dma_ch 6
@@ -73,7 +73,7 @@ void IRQ_16(void) __attribute__((alias("IRQ_osd_end")));
 #define tim1_cc_irq 27
 void IRQ_27(void) __attribute__((alias("IRQ_osd_pre_end")));
 
-/* TIM2: Ch.1 Output Compare triggers IRQ. Overflow triggers SPI DMA. 
+/* TIM2: Ch.1 Output Compare triggers IRQ. Overflow triggers SPI DMA.
  * Counter starts on TIM1 UEV (itself triggered by TIM1 Ch.1 input pin). */
 #define tim2_irq 28
 void IRQ_28(void) __attribute__((alias("IRQ_osd_pre_start")));
@@ -148,7 +148,7 @@ static void watchdog_init(void)
     /* Set up the Watchdog. Based on LSI at 30-60kHz (av. 40kHz). */
     iwdg->kr = 0xcccc; /* Enables watchdog, turns on LSI oscillator. */
     while (iwdg->sr & 3) {
-        /* System Memory Bootloader modifies PR. We must wait for that 
+        /* System Memory Bootloader modifies PR. We must wait for that
          * to take effect before making our own changes. */
     }
     iwdg->kr = 0x5555; /* Enables access to PR and RLR. */
@@ -217,7 +217,7 @@ static uint8_t get_buttons(void)
     static uint16_t _b;
     uint8_t b = 0;
 
-    /* We debounce the switch by waiting for it to be pressed continuously 
+    /* We debounce the switch by waiting for it to be pressed continuously
      * for 16 consecutive sample periods (16 * 5ms == 80ms) */
     _b <<= 1;
     _b |= gpio_read_pin(gpioa, 2);
@@ -342,7 +342,7 @@ static void IRQ_csync(void)
         time_t t = time_now();
         bool_t csync_now = gpio_read_pin(gpio_csync, pin_csync);
 
-        /* Trigger on both sync edges so we can measure sync pulse width: 
+        /* Trigger on both sync edges so we can measure sync pulse width:
          * Normal Sync ~= 5us, Porch+Data ~= 59us */
         exti->ftsr |= m(pin_csync) | m(pin_vsync);
         exti->rtsr |= m(pin_csync) | m(pin_vsync);
@@ -432,11 +432,11 @@ static uint32_t dispctl_reg;
 static uint32_t dispctl_on;
 static uint32_t dispctl_off;
 
-/* Called during initialisation to set the display-control variables based on 
+/* Called during initialisation to set the display-control variables based on
  * configured display-control mode. */
 static void setup_dispctl_mode(void)
 {
-    /* AT32F403: SPI master is not clocked unless SCK pin is configured 
+    /* AT32F403: SPI master is not clocked unless SCK pin is configured
      * alternate function output. */
     if (startup_display_spi == DISP_SPI1) {
         gpio_configure_pin(gpio_display_spi1, pin_display_spi1_sck,
@@ -453,7 +453,7 @@ static void setup_dispctl_mode(void)
     switch (startup_dispctl_mode) {
 
     case DISPCTL_tristate:
-        /* PA15: Unused 
+        /* PA15: Unused
          * SPIx: Tristate outside OSD box */
 
         if (startup_display_spi == DISP_SPI1) {
@@ -476,7 +476,7 @@ static void setup_dispctl_mode(void)
 
     case DISPCTL_enable_high:
     case DISPCTL_enable_low: {
-        /* PA15: Display Enable: Active HIGH or LOW 
+        /* PA15: Display Enable: Active HIGH or LOW
          * SPIx: Always driven */
         bool_t active_low = (startup_dispctl_mode == DISPCTL_enable_low);
 
@@ -498,12 +498,12 @@ static uint16_t dma_display_ccr = (DMA_CCR_PL_V_HIGH |
                                    DMA_CCR_DIR_M2P |
                                    DMA_CCR_EN);
 
-/* Triggered by TIM2 1us before the start of the OSD box. We use this to 
+/* Triggered by TIM2 1us before the start of the OSD box. We use this to
  * quiesce interrupts during the critical initial OSD DMAs. We also retask
  * TIM1 to cleanly finish the OSD box at end of line. */
 static void IRQ_osd_pre_start(void)
 {
-    /* Set TIM1 to start counting when triggered by TIM2. Output-compare 
+    /* Set TIM1 to start counting when triggered by TIM2. Output-compare
      * will trigger DMA to disable OSD output at end of line. */
     tim1->smcr = (TIM_SMCR_TS(1) /* Timer 2 */
                   | TIM_SMCR_SMS(6)); /* Trigger Mode (starts counter) */
@@ -602,7 +602,7 @@ static void render_line(int y, const struct display *display)
 static struct display notify;
 static time_t notify_time;
 
-/* We snapshot the relevant Amiga keys so that we can scan the keymap (and 
+/* We snapshot the relevant Amiga keys so that we can scan the keymap (and
  * clear the sticky bits) in one place in the main loop. */
 static uint8_t keys;
 #define K_LEFT   B_LEFT
@@ -717,7 +717,7 @@ static void emulate_gotek_buttons(void)
     *(volatile uint8_t *)&i2c_osd_info.buttons = b;
 }
 
-/* Called before erasing Flash, to temporarily disable the display. 
+/* Called before erasing Flash, to temporarily disable the display.
  * Flash updates can stall instruction fetch and mess up the OSD. */
 void display_off(void)
 {
@@ -860,7 +860,7 @@ int main(void)
     watchdog_init();
 
     /* Relocate DATA. Initialise BSS. */
-    if (_sdat != _ldat)
+    if (&_sdat[0] != &_ldat[0])
         memcpy(_sdat, _ldat, _edat-_sdat);
     memset(_sbss, 0, _ebss-_sbss);
 
@@ -952,10 +952,10 @@ int main(void)
                        DMA_CCR_EN);
     setup_slave_timer(tim4);
 
-    /* Timer 2 interrupts us horizontally just before the OSD box, so that 
+    /* Timer 2 interrupts us horizontally just before the OSD box, so that
      * we can pause I2C IRQ transfers. */
     tim2->ccmr1 = TIM_CCMR1_CC1S(TIM_CCS_OUTPUT);
-    /* AT32F403: Even if output is frozen (OCxM=0), CCxE bit prevents other 
+    /* AT32F403: Even if output is frozen (OCxM=0), CCxE bit prevents other
      * AFs from driving the output pin (eg. SPI2_MOSI vs TIM1_CH3). */
     /*tim2->ccer = TIM_CCER_CC1E;*/
     tim2->dier |= TIM_DIER_CC1IE;
@@ -1014,7 +1014,7 @@ int main(void)
 
         canary_check();
 
-        /* Wait while displaying OSD box. This avoids modifying config values 
+        /* Wait while displaying OSD box. This avoids modifying config values
          * etc during the critical display period, which could cause
          * glitches. */
         for (i = 0; i < 5; i++) { /* up to 5ms */
@@ -1023,7 +1023,7 @@ int main(void)
             delay_ms(1);
         }
 
-        /* Check for losing sync: no valid frame in over 100ms. We repeat the 
+        /* Check for losing sync: no valid frame in over 100ms. We repeat the
          * forced reset every 100ms until sync is re-established. */
         if (time_diff(frame_time, time_now()) > time_ms(100)) {
             if (!lost_sync)
