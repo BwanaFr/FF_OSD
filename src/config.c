@@ -107,6 +107,8 @@ struct display config_display = {
 static enum {
     C_idle = 0,
     C_banner,
+    /* Configurable pins */
+    C_configpins,
     /* Output */
     C_polarity,
     C_disptiming,
@@ -176,6 +178,7 @@ void config_process(uint8_t b, bool_t autosync_changed)
     static enum { C_SAVE = 0, C_SAVEREBOOT, C_USE, C_DISCARD,
                   C_RESET, C_NC_MAX } new_config;
     static struct config old_config;
+    static int8_t actual_user_pin = 0;
 
     _b = b;
     b &= b ^ (pb & B_SELECT);
@@ -193,7 +196,11 @@ void config_process(uint8_t b, bool_t autosync_changed)
     }
 
     if (b & B_SELECT) {
-        if (++config_state >= C_max) {
+        /* User pin configuration */
+        if(config_state != C_configpins) {
+            ++config_state;
+        }
+        if (config_state >= C_max) {
             config_state = C_idle;
             display_off();
             switch (new_config) {
@@ -225,6 +232,10 @@ void config_process(uint8_t b, bool_t autosync_changed)
             /* Skip LCD config options if using the extended OSD protocol. */
             config_state = C_save;
         }
+        if((config_state == C_banner) && (config.config_pins[0].pin_mod == 0)) {
+            /* No user configurable pins here*/
+            ++config_state;
+        }
         config_active = (config_state != C_idle);
         changed = TRUE;
     }
@@ -239,6 +250,28 @@ void config_process(uint8_t b, bool_t autosync_changed)
             old_config = config;
         }
         break;
+    case C_configpins:
+        if(changed){
+            ++actual_user_pin;
+            if((actual_user_pin > ARRAY_SIZE(config.config_pins)) || 
+                (config.config_pins[actual_user_pin-1].pin_mod == 0)) {
+                actual_user_pin = 0;
+                ++config_state;
+                goto next_item;
+            }
+            cnf_prt(0, "%d %s:", actual_user_pin-1, config.config_pins[actual_user_pin-1].str);          
+        }
+        if (b & (B_LEFT|B_RIGHT)) {
+            config.config_pins[actual_user_pin-1].value = !config.config_pins[actual_user_pin-1].value;            
+        }
+        if(b){
+            cnf_prt(1, "%s",
+                        config.config_pins[actual_user_pin-1].value ? config.config_pins[actual_user_pin-1].onText :
+                        config.config_pins[actual_user_pin-1].offText
+            );
+        }
+        break;
+next_item:
     case C_polarity:
         if (changed)
             cnf_prt(0, "Sync Polarity:");

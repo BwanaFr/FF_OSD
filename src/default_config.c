@@ -25,6 +25,26 @@ const static struct config dfl_config = {
 #define F(x) (x-1)   /* Hotkey (F1-F10) array index */
 #define U(x) (1u<<x) /* User pin (U0-U2) bitmask */
 
+#if 1
+    .config_pins = {
+        {
+            .pin_mod = U(0),
+            .pin_high = U(0),
+            .value = FALSE,
+            .str = "DFO",
+            .onText = "Internal",
+            .offText = "Ext/Gotek"
+        },
+        {
+            .pin_mod = U(1),
+            .pin_high = U(1),
+            .value = FALSE,
+            .str = "External drive",
+            .onText = "Gotek",
+            .offText = "External"
+        },
+    }
+#endif
 #if 0
     /* An example configuration for switching ROMs and PAL/NTSC or DF0/DF1:
      *  F1-F4: Switch between ROMs #1-#4 via binary value at pins U1,U0. 
