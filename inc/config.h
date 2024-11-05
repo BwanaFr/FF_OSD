@@ -69,11 +69,15 @@ extern struct packed config {
     } hotkey[10];
 
     struct packed configurable_pins {
+        /* Pins changed by this configuration */
         uint8_t pin_mod;
-        uint8_t pin_high;
-        bool_t value;
+        /* State of the pin */
+        bool_t state;
+        /* Name of the pin */
         char str[16];
+        /* Text when pin is TRUE */
         char onText[14];
+        /* Text when pin is FALSE */
         char offText[14];
     } config_pins[2];
 

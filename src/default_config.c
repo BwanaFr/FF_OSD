@@ -25,20 +25,22 @@ const static struct config dfl_config = {
 #define F(x) (x-1)   /* Hotkey (F1-F10) array index */
 #define U(x) (1u<<x) /* User pin (U0-U2) bitmask */
 
-#if 1
+#if 0
+    /* An example configuration of user configurable pins
+     * These pins can be changed by using the configuration
+     * menu (useful for usage without amiga keyboard) */
+    .user_pin_pushpull  = U(1) | U(0),
     .config_pins = {
         {
             .pin_mod = U(0),
-            .pin_high = U(0),
-            .value = FALSE,
+            .state = FALSE,
             .str = "DFO",
             .onText = "Internal",
             .offText = "Ext/Gotek"
         },
         {
             .pin_mod = U(1),
-            .pin_high = U(1),
-            .value = FALSE,
+            .state = FALSE,
             .str = "External drive",
             .onText = "Gotek",
             .offText = "External"

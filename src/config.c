@@ -32,6 +32,12 @@ const static char *polarity_pretty[] = { "Low", "High", "Auto" };
 static void config_printk(const struct config *conf)
 {
     printk("\nCurrent config:\n");
+    for(int i=0;i<ARRAY_SIZE(conf->config_pins);++i){
+        const struct configurable_pins* cfgPin = &conf->config_pins[i];
+        if(cfgPin->pin_mod){
+            printk(" %s: %s\n", cfgPin->str, cfgPin->state ? cfgPin->onText : cfgPin->offText);
+        }
+    }
     printk(" Sync Polarity: %s\n", polarity_pretty[conf->polarity]);
     printk(" Pixel Timing: %s\n", timing_pretty[config.display_timing]);
     printk(" Display Height: %s\n", conf->display_2Y ? "Double" : "Normal");
@@ -42,12 +48,6 @@ static void config_printk(const struct config *conf)
     printk(" V.Off: %u\n", conf->v_off);
     printk(" Rows: %u\n", conf->rows);
     printk(" Columns: %u-%u\n", conf->min_cols, conf->max_cols);
-    for(int i=0;i<ARRAY_SIZE(conf->config_pins);++i){
-        const struct configurable_pins* cfgPin = &conf->config_pins[i];
-        if(cfgPin->pin_mod){
-            printk(" %s: %s\n", cfgPin->str, cfgPin->value ? cfgPin->onText : cfgPin->offText);
-        }
-    }
 }
 
 static void config_write_flash(struct config *conf)
@@ -232,10 +232,6 @@ void config_process(uint8_t b, bool_t autosync_changed)
             /* Skip LCD config options if using the extended OSD protocol. */
             config_state = C_save;
         }
-        if((config_state == C_banner) && (config.config_pins[0].pin_mod == 0)) {
-            /* No user configurable pins here*/
-            ++config_state;
-        }
         config_active = (config_state != C_idle);
         changed = TRUE;
     }
@@ -259,14 +255,15 @@ void config_process(uint8_t b, bool_t autosync_changed)
                 ++config_state;
                 goto next_item;
             }
-            cnf_prt(0, "%d %s:", actual_user_pin-1, config.config_pins[actual_user_pin-1].str);          
+            cnf_prt(0, "%s:", config.config_pins[actual_user_pin-1].str);
         }
         if (b & (B_LEFT|B_RIGHT)) {
-            config.config_pins[actual_user_pin-1].value = !config.config_pins[actual_user_pin-1].value;            
+            config.config_pins[actual_user_pin-1].state = !config.config_pins[actual_user_pin-1].state;
+            gpio_write_pins(gpio_user, config.config_pins[actual_user_pin-1].pin_mod << pin_u0, config.config_pins[actual_user_pin-1].state);
         }
         if(b){
             cnf_prt(1, "%s",
-                        config.config_pins[actual_user_pin-1].value ? config.config_pins[actual_user_pin-1].onText :
+                        config.config_pins[actual_user_pin-1].state ? config.config_pins[actual_user_pin-1].onText :
                         config.config_pins[actual_user_pin-1].offText
             );
         }

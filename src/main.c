@@ -110,10 +110,6 @@ void IRQ_28(void) __attribute__((alias("IRQ_osd_pre_start")));
 #define gpio_dispen gpioa
 #define pin_dispen  15
 
-/* User outputs are PB8 upwards. */
-#define gpio_user gpiob
-#define pin_u0 8
-
 /* List of interrupts used by the display-sync and -output system. */
 const static uint8_t irqs[] = {
     tim1_cc_irq, tim2_irq, tim1_ch3_dma_tc_irq, irq_csync, irq_vsync
@@ -905,6 +901,13 @@ int main(void)
         if (config.user_pin_pushpull & (1u<<i))
             gpio_configure_pin(gpio_user, pin_u0+i,
                                GPO_pushpull(_2MHz, level));
+    }
+
+    /* Configurable user pins state */
+    for(i=0;i<ARRAY_SIZE(config.config_pins);++i){
+        if(config.config_pins[i].pin_mod != 0){
+            gpio_write_pins(gpio_user, config.config_pins[i].pin_mod << pin_u0, config.config_pins[i].state);
+        }
     }
 
     /* Display DMA setup: From memory into the Display Timer's CCRx. */

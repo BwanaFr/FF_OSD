@@ -121,6 +121,11 @@ void amiga_init(void);
 #define B_SELECT 4
 #define B_PROCESSED 8
 
+/* User GPIOs */
+/* User outputs are PB8 upwards. */
+#define gpio_user gpiob
+#define pin_u0 8
+
 /* Serial I/O */
 void console_init(void);
 void console_sync(void);
