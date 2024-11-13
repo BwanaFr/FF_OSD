@@ -25,27 +25,13 @@ const static struct config dfl_config = {
 #define F(x) (x-1)   /* Hotkey (F1-F10) array index */
 #define U(x) (1u<<x) /* User pin (U0-U2) bitmask */
 
-#if 0
-    /* An example configuration of user configurable pins
-     * These pins can be changed by using the configuration
-     * menu (useful for usage without amiga keyboard) */
-    .user_pin_pushpull  = U(1) | U(0),
-    .config_pins = {
-        {
-            .pin_mod = U(0),
-            .state = FALSE,
-            .str = "DFO",
-            .onText = "Internal",
-            .offText = "Ext/Gotek"
-        },
-        {
-            .pin_mod = U(1),
-            .state = FALSE,
-            .str = "External drive",
-            .onText = "Gotek",
-            .offText = "External"
-        },
-    }
+#if 1
+    /* Configure outputs for selecting the proper
+     * floppy output configuration
+     */
+    .user_pin_pushpull  = U(2) | U(1) | U(0),
+    .driveA_select = 0,
+    .driveB_select = 1,
 #endif
 #if 0
     /* An example configuration for switching ROMs and PAL/NTSC or DF0/DF1:

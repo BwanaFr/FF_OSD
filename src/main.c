@@ -45,9 +45,9 @@
  *  B4: KBCLK
  *
  * User outputs:
- *  B8:  U0
- *  B9:  U1
- *  B10: U2
+ *  B8:  U0 (Drive select matrix)
+ *  B9:  U1 (Drive select matrix)
+ *  B10: U2 (Drive select matrix)
  */
 
 /* CSYNC/HSYNC (A8): EXTI IRQ trigger and TIM1 Ch.1 trigger. */
@@ -903,12 +903,9 @@ int main(void)
                                GPO_pushpull(_2MHz, level));
     }
 
-    /* Configurable user pins state */
-    for(i=0;i<ARRAY_SIZE(config.config_pins);++i){
-        if(config.config_pins[i].pin_mod != 0){
-            gpio_write_pins(gpio_user, config.config_pins[i].pin_mod << pin_u0, config.config_pins[i].state);
-        }
-    }
+    /* Floppy selection */
+    config_floppy_select();
+
 
     /* Display DMA setup: From memory into the Display Timer's CCRx. */
     if (startup_display_spi == DISP_SPI1)

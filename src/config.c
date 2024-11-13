@@ -29,15 +29,16 @@ const static char *timing_pretty[] = { "15kHz", "VGA", "Auto" };
 
 const static char *polarity_pretty[] = { "Low", "High", "Auto" };
 
+const static char *floppy_sel_pretty[] = { "Internal", "External", "Gotek"};
+#define FLOPPY_INTERNAL 0
+#define FLOPPY_EXTERNAL 1
+#define FLOPPY_GOTEK 2
+
 static void config_printk(const struct config *conf)
 {
     printk("\nCurrent config:\n");
-    for(int i=0;i<ARRAY_SIZE(conf->config_pins);++i){
-        const struct configurable_pins* cfgPin = &conf->config_pins[i];
-        if(cfgPin->pin_mod){
-            printk(" %s: %s\n", cfgPin->str, cfgPin->state ? cfgPin->onText : cfgPin->offText);
-        }
-    }
+    printk(" Drive A: %s\n", floppy_sel_pretty[conf->driveA_select]);
+    printk(" Drive B: %s\n", floppy_sel_pretty[conf->driveB_select]);
     printk(" Sync Polarity: %s\n", polarity_pretty[conf->polarity]);
     printk(" Pixel Timing: %s\n", timing_pretty[config.display_timing]);
     printk(" Display Height: %s\n", conf->display_2Y ? "Double" : "Normal");
@@ -107,8 +108,9 @@ struct display config_display = {
 static enum {
     C_idle = 0,
     C_banner,
-    /* Configurable pins */
-    C_configpins,
+    /* Floppy select pins */
+    C_drvA_select,
+    C_drvB_select,
     /* Output */
     C_polarity,
     C_disptiming,
@@ -170,6 +172,31 @@ uint8_t button_repeat(uint8_t pb, uint8_t b, uint8_t m, struct repeat *r)
     return b;
 }
 
+void config_floppy_select(void)
+{
+    uint32_t mask = 0;
+    if(config.driveA_select == FLOPPY_INTERNAL && config.driveB_select == FLOPPY_EXTERNAL){
+        mask = 0;
+    }else if(config.driveA_select == FLOPPY_INTERNAL && config.driveB_select == FLOPPY_GOTEK){
+        mask = 1;
+    }else if(config.driveA_select == FLOPPY_EXTERNAL && config.driveB_select == FLOPPY_INTERNAL){
+        mask = 2;
+    }else if(config.driveA_select == FLOPPY_EXTERNAL && config.driveB_select == FLOPPY_GOTEK){
+        mask = 3;
+    }else if(config.driveA_select == FLOPPY_GOTEK && config.driveB_select == FLOPPY_EXTERNAL){
+        mask = 4;
+    }else if(config.driveA_select == FLOPPY_GOTEK && config.driveB_select == FLOPPY_INTERNAL){
+        mask = 5;
+    }else{
+        mask = 0;
+        config.driveA_select = FLOPPY_INTERNAL;
+        config.driveB_select = FLOPPY_EXTERNAL;
+    }
+    //Write user ports GPIO
+    gpio_user->odr = (gpio_user->odr & ~(0b111 << pin_u0)) | (mask << pin_u0);
+}
+
+
 void config_process(uint8_t b, bool_t autosync_changed)
 {
     uint8_t _b;
@@ -178,7 +205,6 @@ void config_process(uint8_t b, bool_t autosync_changed)
     static enum { C_SAVE = 0, C_SAVEREBOOT, C_USE, C_DISCARD,
                   C_RESET, C_NC_MAX } new_config;
     static struct config old_config;
-    static int8_t actual_user_pin = 0;
 
     _b = b;
     b &= b ^ (pb & B_SELECT);
@@ -196,11 +222,7 @@ void config_process(uint8_t b, bool_t autosync_changed)
     }
 
     if (b & B_SELECT) {
-        /* User pin configuration */
-        if(config_state != C_configpins) {
-            ++config_state;
-        }
-        if (config_state >= C_max) {
+        if (++config_state >= C_max) {
             config_state = C_idle;
             display_off();
             switch (new_config) {
@@ -227,6 +249,7 @@ void config_process(uint8_t b, bool_t autosync_changed)
             printk("\n");
             config_printk(&config);
             lcd_display_update();
+            config_floppy_select();
         }
         if ((config_state == C_rows) && i2c_osd_protocol) {
             /* Skip LCD config options if using the extended OSD protocol. */
@@ -246,29 +269,49 @@ void config_process(uint8_t b, bool_t autosync_changed)
             old_config = config;
         }
         break;
-    case C_configpins:
+    case C_drvA_select:
         if(changed){
-            ++actual_user_pin;
-            if((actual_user_pin > ARRAY_SIZE(config.config_pins)) || 
-                (config.config_pins[actual_user_pin-1].pin_mod == 0)) {
-                actual_user_pin = 0;
-                ++config_state;
-                goto next_item;
-            }
-            cnf_prt(0, "%s:", config.config_pins[actual_user_pin-1].str);
+            cnf_prt(0, "Drive A:");
         }
-        if (b & (B_LEFT|B_RIGHT)) {
-            config.config_pins[actual_user_pin-1].state = !config.config_pins[actual_user_pin-1].state;
-            gpio_write_pins(gpio_user, config.config_pins[actual_user_pin-1].pin_mod << pin_u0, config.config_pins[actual_user_pin-1].state);
+        if (b & B_LEFT) {
+            if (config.driveA_select > 0)
+                --config.driveA_select;
+            else
+                config.driveA_select = ARRAY_SIZE(floppy_sel_pretty) -1;
+        }
+        if (b & B_RIGHT) {
+            if (++config.driveA_select >= ARRAY_SIZE(floppy_sel_pretty))
+                config.driveA_select = 0;
         }
         if(b){
-            cnf_prt(1, "%s",
-                        config.config_pins[actual_user_pin-1].state ? config.config_pins[actual_user_pin-1].onText :
-                        config.config_pins[actual_user_pin-1].offText
-            );
+            if(config.driveA_select == config.driveB_select){
+                config.driveB_select = ++config.driveB_select >= ARRAY_SIZE(floppy_sel_pretty) ? 0 : config.driveB_select;
+            }
+            cnf_prt(1, "%s", floppy_sel_pretty[config.driveA_select]);
         }
         break;
-next_item:
+    case C_drvB_select:
+        if(changed){
+            cnf_prt(0, "Drive B:");
+        }
+        if (b & B_LEFT) {
+            do{
+                if (config.driveB_select > 0)
+                    --config.driveB_select;
+                else
+                    config.driveB_select = ARRAY_SIZE(floppy_sel_pretty) -1;
+            }while(config.driveB_select == config.driveA_select);
+        }
+        if (b & B_RIGHT) {
+            do{
+                if (++config.driveB_select >= ARRAY_SIZE(floppy_sel_pretty))
+                    config.driveB_select = 0;
+            }while(config.driveB_select == config.driveA_select);
+        }
+        if(b){
+            cnf_prt(1, "%s", floppy_sel_pretty[config.driveB_select]);
+        }
+        break;
     case C_polarity:
         if (changed)
             cnf_prt(0, "Sync Polarity:");

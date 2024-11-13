@@ -68,18 +68,9 @@ extern struct packed config {
         char str[30];
     } hotkey[10];
 
-    struct packed configurable_pins {
-        /* Pins changed by this configuration */
-        uint8_t pin_mod;
-        /* State of the pin */
-        bool_t state;
-        /* Name of the pin */
-        char str[16];
-        /* Text when pin is TRUE */
-        char onText[14];
-        /* Text when pin is FALSE */
-        char offText[14];
-    } config_pins[2];
+    /* Floppy signal selection*/
+    uint8_t driveA_select;
+    uint8_t driveB_select;
 
     uint16_t crc16_ccitt;
 
@@ -90,6 +81,7 @@ extern struct display config_display;
 
 void config_init(void);
 void config_process(uint8_t b, bool_t autosync_changed);
+void config_floppy_select(void);
 
 /*
  * Local variables:
